@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         tweetranslator
+// @name         tweet_ranslator_test
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  translate tweets by google....
@@ -23,16 +23,10 @@
 // ==/UserScript==
 
 const sessionStorage = window.sessionStorage;
-
-const transdict={
-    '谷歌翻译':translate_gg,
-    '关闭翻译':()=>{}
-};
-const startup={
-
-};
+const transdict={'谷歌翻译':translator};
+const startup={};
 const baseoptions = {
-    'enable_pass_lang': {
+    'isMandarin': {
         declare: '不翻译中文',
         default_value: false,
         change_func: self => {
@@ -53,7 +47,7 @@ const baseoptions = {
     }
 };
 
-const [enable_pass_lang,remove_url,show_info,fullscrenn_hidden]=Object.keys(baseoptions).map(key=>GM_getValue(key,baseoptions[key].default_value));
+const [isMandarin,remove_url,show_info,fullscrenn_hidden]=Object.keys(baseoptions).map(key=>GM_getValue(key,baseoptions[key].default_value));
 
 const globalProcessingSave=[];
 
@@ -311,7 +305,7 @@ function url_filter(text){
 }
 
 async function pass_lang(raw){//确认是否为中文，是则中断promise
-    if(!enable_pass_lang)return;
+    if(!isMandarin)return;
     try{
         const result = await check_lang(raw)
         if(result=='zh')return new Promise(()=>{});
@@ -352,11 +346,11 @@ function guid() {
 //--综合工具区--end
 
 //--谷歌翻译--start
-async function translate_gg(raw){
+async function translator(raw){
     const options = {
         method:"POST",
         url:"https://translate.google.com/_/TranslateWebserverUi/data/batchexecute",
-        data: "f.req="+encodeURIComponent(JSON.stringify([[["MkEWBc",JSON.stringify([[raw,"auto","zh-CN",true],[null]]),null,"generic"]]])),
+        data: "f.req="+encodeURIComponent(JSON.stringify([[["MkEWBc",JSON.stringify([[raw,"auto","zh",true],[null]]),null,"generic"]]])),
         headers: {
             "content-type": "application/x-www-form-urlencoded",
             "Host": "translate.google.com",
