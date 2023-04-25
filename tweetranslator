@@ -26,7 +26,6 @@ const sessionStorage = window.sessionStorage;
 
 const transdict={
     '谷歌翻译':translate_gg,
-
     '关闭翻译':()=>{}
 };
 const startup={
@@ -302,7 +301,7 @@ function baseTextSetter(e,name,text){//change element text
     if((text||"").length==0)text='翻译异常';
     const spanNode = document.createElement('span');
     spanNode.style.whiteSpace = "pre-wrap";
-    spanNode.innerText = `\n\n${show_info?"-----------"+name+"-----------":""}\n\n`+text;
+    spanNode.innerText = `\n${show_info?"🀄":""}`+text+"🀄";
     spanNode.dataset.translate="processed";
     e.appendChild(spanNode);
 }
