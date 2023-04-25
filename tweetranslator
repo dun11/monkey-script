@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  translate tweets by google....
-// @author       dundavid
+// @author       dunnnn.com, chat.openai.com
 // @match        *://*.twitter.com/*
 // @match        *://*.youtube.com/*
 // @match        *://*.facebook.com/*
@@ -14,16 +14,6 @@
 // @match        *://*.quora.com/*
 // @connect      fanyi.baidu.com
 // @connect      translate.google.com
-// @connect      ifanyi.iciba.com
-// @connect      www.bing.com
-// @connect      fanyi.youdao.com
-// @connect      dict.youdao.com
-// @connect      m.youdao.com
-// @connect      api.interpreter.caiyunai.com
-// @connect      papago.naver.com
-// @connect      fanyi.qq.com
-// @connect      translate.alibaba.com
-// @connect      www2.deepl.com
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -31,30 +21,16 @@
 // @require      https://cdn.jsdelivr.net/npm/js-base64@3.7.4/base64.min.js
 // @run-at       document-body
 // ==/UserScript==
- 
+
 const sessionStorage = window.sessionStorage;
- 
+
 const transdict={
     '谷歌翻译':translate_gg,
-    '谷歌翻译mobile':translate_ggm,
-    '腾讯翻译':translate_tencent,
-    //'有道翻译':translate_youdao,
-    '有道翻译mobile':translate_youdao_mobile,
-    '百度翻译':translate_baidu,
-    '彩云小译':translate_caiyun,
-    '必应翻译':translate_biying,
-    'Papago翻译':translate_papago,
-    '阿里翻译':translate_alibaba,
-    '爱词霸翻译':translate_icib,
-    'Deepl翻译': translate_deepl,
+
     '关闭翻译':()=>{}
 };
 const startup={
-    //'有道翻译':translate_youdao_startup,
-    '腾讯翻译':translate_tencent_startup,
-    '百度翻译':translate_baidu_startup,
-    '彩云小译':translate_caiyun_startup,
-    'Papago翻译':translate_papago_startup
+
 };
 const baseoptions = {
     'enable_pass_lang': {
@@ -77,11 +53,11 @@ const baseoptions = {
         default_value: true,
     }
 };
- 
+
 const [enable_pass_lang,remove_url,show_info,fullscrenn_hidden]=Object.keys(baseoptions).map(key=>GM_getValue(key,baseoptions[key].default_value));
- 
+
 const globalProcessingSave=[];
- 
+
 function initPanel(){
     let choice=GM_getValue('translate_choice','谷歌翻译');
     let select=document.createElement("select");
@@ -149,7 +125,7 @@ function initPanel(){
     window.top.document.querySelector('.js_translate option[value='+choice+']').selected=true;
     if(fullscrenn_hidden)window.top.document.addEventListener('fullscreenchange',()=>{open.style.display=window.top.document.fullscreenElement?"none":"flex"});
 }
- 
+
 const rules={
     'tweetdeck':[{
         name:'tweetdeck',
@@ -254,8 +230,8 @@ const rules={
         textSetter:baseTextSetter
     }]*/
 };
- 
- 
+
+
 (function() {
     'use strict';
     const GetActiveRule = ()=>Object.entries(rules).filter(([key])=>GM_getValue("enable_rule:"+key,true)).map(([_,group])=>group).flat().find(item=>item.matcher.test(document.location.href));
@@ -300,14 +276,14 @@ const rules={
     PromiseRetryWrap(startup[GM_getValue('translate_choice','谷歌翻译')]).then(()=>{document.js_translater=setInterval(main,20)});
     initPanel();
 })();
- 
+
 //--综合工具区--start
- 
+
 function removeItem(arr,item){
     const index=arr.indexOf(item);
     if(index>-1)arr.splice(index,1);
 }
- 
+
 function baseSelector(selector){
     return ()=>{
         const items = document.querySelectorAll(selector);
@@ -317,11 +293,11 @@ function baseSelector(selector){
         })
     }
 }
- 
+
 function baseTextGetter(e){
     return e.innerText;
 }
- 
+
 function baseTextSetter(e,name,text){//change element text
     if((text||"").length==0)text='翻译异常';
     const spanNode = document.createElement('span');
@@ -330,11 +306,11 @@ function baseTextSetter(e,name,text){//change element text
     spanNode.dataset.translate="processed";
     e.appendChild(spanNode);
 }
- 
+
 function url_filter(text){
     return text.replace(/(https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]/g,'');
 }
- 
+
 async function pass_lang(raw){//确认是否为中文，是则中断promise
     if(!enable_pass_lang)return;
     try{
@@ -347,7 +323,7 @@ async function pass_lang(raw){//确认是否为中文，是则中断promise
     }
     return
 }
- 
+
 async function check_lang(raw){
     const options = {
         method:"POST",
@@ -365,17 +341,17 @@ async function check_lang(raw){
         return
     }
 }
- 
- 
+
+
 function guid() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         let r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
         return v.toString(16);
     });
 }
- 
+
 //--综合工具区--end
- 
+
 //--谷歌翻译--start
 async function translate_gg(raw){
     const options = {
@@ -391,417 +367,12 @@ async function translate_gg(raw){
     }
     return await BaseTranslate('谷歌翻译',raw,options,res=>JSON.parse(JSON.parse(res.slice(res.indexOf('[')))[0][2])[1][0][0][5].map(item=>item[0]).join(''))
 }
- 
+
 //--谷歌翻译--end
- 
-//--谷歌翻译mobile--start
-async function translate_ggm(raw){
-    const options = {
-        method:"GET",
-        url:"https://translate.google.com/m?tl=zh-CN&q="+encodeURIComponent(raw),
-        headers:{
-            "Host": "translate.google.com",
-        },
-        anonymous:true,
-        nocache:true,
-    }
-    return await BaseTranslate('谷歌翻译mobile',raw,options,res=>/class="result-container">((?:.|\n)*?)<\/div/.exec(res)[1])
-}
-//--谷歌翻译mobile--end
- 
-//--百度翻译--start
-function tk(a,b){
-    var d = b.split(".");
-    b = Number(d[0]) || 0;
-    for (var e = [], f = 0, g = 0; g < a.length; g++) {
-        var k = a.charCodeAt(g);
-        128 > k ? e[f++] = k : (2048 > k ? e[f++] = k >> 6 | 192 : (55296 == (k & 64512) && g + 1 < a.length && 56320 == (a.charCodeAt(g + 1) & 64512) ? (k = 65536 + ((k & 1023) << 10) + (a.charCodeAt(++g) & 1023),
-        e[f++] = k >> 18 | 240,
-        e[f++] = k >> 12 & 63 | 128) : e[f++] = k >> 12 | 224,
-                                                                    e[f++] = k >> 6 & 63 | 128),
-                                e[f++] = k & 63 | 128)
-    }
-    a = b;
-    for (f = 0; f < e.length; f++)a = Fo(a+e[f], "+-a^+6");
-    a = Fo(a, "+-3^+b+-f");
-    a ^= Number(d[1]) || 0;
-    0 > a && (a = (a & 2147483647) + 2147483648);
-    a %= 1E6;
-    return a.toString() + "." + (a ^ b)
-}
-function Fo(a, b) {
-    for (var c = 0; c < b.length - 2; c += 3) {
-        var d = b.charAt(c + 2);
-        d = "a" <= d ? d.charCodeAt(0) - 87 : Number(d);
-        d = "+" == b.charAt(c + 1) ? a >>> d : a << d;
-        a = "+" == b.charAt(c) ? a + d & 4294967295 : a ^ d
-    }
-    return a
-}
- 
-async function translate_baidu_startup(){
-    if(sessionStorage.getItem('baidu_gtk')&&sessionStorage.getItem('baidu_token'))return;
-    const options = {
-        method:'GET',
-        url:'https://fanyi.baidu.com',
-    }
-    const res = await Request(options);
-    sessionStorage.setItem('baidu_gtk',/window\.gtk = ('|")(.*?)('|")/.exec(res.responseText)[2]);
-    sessionStorage.setItem('baidu_token',/token: ('|")(.*?)('|")/.exec(res.responseText)[2])
-}
- 
-async function translate_baidu(raw,lang){
-    if(!lang){
-        lang = await check_lang(raw)
-    }
-    const processed_raw = raw.length>30?(raw.substr(0,10)+raw.substr(~~(raw.length/2)-5,10)+raw.substr(-10)):raw;//process
-    const tk_key = sessionStorage.getItem('baidu_gtk');
-    const token = sessionStorage.getItem('baidu_token');//get token
-    const options = {
-        method:"POST",
-        url:'https://fanyi.baidu.com/v2transapi',
-        data:'from='+lang+'&to=zh&query='+encodeURIComponent(raw)+'&simple_means_flag=3&sign='+tk(processed_raw,tk_key)+"&token="+token+"&domain=common",
-        headers: {
-            "referer": 'https://fanyi.baidu.com',
-            "Content-Type": 'application/x-www-form-urlencoded; charset=UTF-8',
-        },
-    }
-    return await BaseTranslate('百度翻译',raw,options,res=>JSON.parse(res).trans_result.data.map(item=>item.dst).join('\n'))
-}
- 
-//--百度翻译--end
- 
-//--爱词霸翻译--start
- 
-async function translate_icib(raw){
-    const sign = CryptoJS.MD5("6key_web_fanyi"+"ifanyiweb8hc9s98e"+raw.replace(/(^\s*)|(\s*$)/g, "")).toString().substring(0,16)
-    const options = {
-        method:"POST",
-        url:`https://ifanyi.iciba.com/index.php?c=trans&m=fy&client=6&auth_user=key_web_fanyi&sign=${sign}`,
-        data:'from=auto&t=zh&q='+encodeURIComponent(raw),
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-    }
-    return await BaseTranslate('爱词霸翻译',raw,options,res=>JSON.parse(res).content.out)
-}
- 
-//--爱词霸翻译--end
- 
- 
-//--必应翻译--start
- 
-async function translate_biying(raw){
-    const options = {
-        method:"POST",
-        url:'https://www.bing.com/ttranslatev3',
-        data:'fromLang=auto-detect&to=zh-Hans&text='+encodeURIComponent(raw),
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-    }
-    return await BaseTranslate('必应翻译',raw,options,res=>JSON.parse(res)[0].translations[0].text)
-}
- 
-//--必应翻译--end
- 
-//--有道翻译--start
-async function translate_youdao_startup(){
-    if(sessionStorage.getItem('youdao_key'))return;
-    const ts = ""+(new Date).getTime();
-    const params = {
-        keyid: "webfanyi-key-getter",
-        client: "fanyideskweb",
-        product: "webfanyi",
-        appVersion: "1.0.0",
-        vendor: "web",
-        pointParam: "client,mysticTime,product",
-        mysticTime: ts,
-        keyfrom: "fanyi.web",
-        sign: CryptoJS.MD5(`client=fanyideskweb&mysticTime=${ts}&product=webfanyi&key=asdjnjfenknafdfsdfsd`)
-    }
-    const options = {
-        method:"GET",
-        url:`https://dict.youdao.com/webtranslate/key?${Object.entries(params).map(item=>item.join('=')).join('&')}`,
-        headers: {
-            "Origin": "https://fanyi.youdao.com"
-        }
-    }
-    const res = await Request(options);
-    sessionStorage.setItem('youdao_key',JSON.parse(res.responseText).data.secretKey)
-}
- 
-async function translate_youdao(raw){
-    const ts=""+(new Date).getTime();
-    const params = {
-        i: encodeURIComponent(raw),
-        from: 'auto',
-        to: '',
-        dictResult: 'true',
-        keyid: "webfanyi",
-        client: "fanyideskweb",
-        product: "webfanyi",
-        appVersion: "1.0.0",
-        vendor: "web",
-        pointParam: "client,mysticTime,product",
-        mysticTime: ts,
-        keyfrom: "fanyi.web",
-        sign: CryptoJS.MD5(`client=fanyideskweb&mysticTime=${ts}&product=webfanyi&key=${sessionStorage.getItem('youdao_key')}`)+''
-    }
-    const options = {
-        method:"POST",
-        url:'https://dict.youdao.com/webtranslate',
-        data:Object.entries(params).map(item=>item.join('=')).join('&'),
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Referer": "https://fanyi.youdao.com/",
-            "Origin": "https://fanyi.youdao.com",
-            "Host": "dict.youdao.com",
-            "Cookie": "OUTFOX_SEARCH_USER_ID=0@0.0.0.0"
-        },
-        anonymous:true,
-    }
-    const res = await Request(options);
-    const decrypted = A(res);
-    console.log(decrypted)
-    //console.log(decrypted.toString(CryptoJS.enc.Utf8).toString());
-    return await BaseTranslate('有道翻译',raw,options,res=>JSON.parse(A(res)).translateResult.map(e=>e.map(t=>t.tgt).join('')).join('\n'))
-}
- 
-function m(e) {
-    return CryptoJS.MD5(e).toString(CryptoJS.enc.Hex);
-}
- 
-function A (t, o, n) {
-    o = "ydsecret://query/key/BRGygVywfNBwpmBaZgWT7SIOUP2T0C9WHMZN39j^DAdaZhAnxvGcCY6VYFwnHl"
-    n = "ydsecret://query/iv/C@lZe2YzHtZ2CYgaXKSVfsb7Y4QWHjITPPZ0nQp87fBeJ!Iv6v^6fvi2WN@bYpJ4"
-    if (!t)
-        return null;
-    const a = CryptoJS.enc.Hex.parse(m(o)),
-          r = CryptoJS.enc.Hex.parse(m(n)),
-          i = CryptoJS.AES.decrypt(t, a, {
-              iv: r
-          });
-    return i.toString(CryptoJS.enc.Utf8);
-}
- 
-//--有道翻译--end
- 
-//--有道翻译m--start
-async function translate_youdao_mobile(raw){
-    const options = {
-        method:"POST",
-        url:'http://m.youdao.com/translate',
-        data:"inputtext="+encodeURIComponent(raw)+"&type=AUTO",
-        anonymous:true,
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
-    }
-    return await BaseTranslate('有道翻译mobile',raw,options,res=>/id="translateResult">\s*?<li>([\s\S]*?)<\/li>\s*?<\/ul/.exec(res)[1])
-}
-//--有道翻译m--end
- 
-//--腾讯翻译--start
- 
-async function translate_tencent_startup(){
-    setTimeout(translate_tencent_startup,10000)//token刷新
-    const base_options = {
-        method: 'GET',
-        url: 'http://fanyi.qq.com',
-        anonymous:true,
-        headers: {
-            "User-Agent": "test",
-        }
-    }
-    const base_res = await Request(base_options)
-    const uri = /reauthuri = "(.*?)"/.exec(base_res.responseText)[1]
-    const options = {
-        method:'POST',
-        url:'https://fanyi.qq.com/api/'+uri
-    }
-    const res = await Request(options);
-    const data = JSON.parse(res.responseText);
-    sessionStorage.setItem('tencent_qtv',data.qtv)
-    sessionStorage.setItem('tencent_qtk',data.qtk)
-}
- 
- 
-async function translate_tencent(raw){
-    const qtk=sessionStorage.getItem('tencent_qtk'),qtv=sessionStorage.getItem('tencent_qtv');
-    const options = {
-        method:'POST',
-        url:'https://fanyi.qq.com/api/translate',
-        data:`source=auto&target=zh&sourceText=${encodeURIComponent(raw)}&qtv=${encodeURIComponent(qtv)}&qtk=${encodeURIComponent(qtk)}&sessionUuid=translate_uuid${Date.now()}`,
-        headers: {
-            "Host":"fanyi.qq.com",
-            "Origin":"https://fanyi.qq.com",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Referer": "https://fanyi.qq.com/",
-            "X-Requested-With": "XMLHttpRequest",
-        }
-    }
-    return await BaseTranslate('腾讯翻译',raw,options,res=>JSON.parse(res).translate.records.map(e=>e.targetText).join(''))
-}
- 
-//--腾讯翻译--end
- 
-//--彩云翻译--start
- 
-async function translate_caiyun_startup(){
-    if(sessionStorage.getItem('caiyun_id') && sessionStorage.getItem('caiyun_jwt'))return;
-    const browser_id=CryptoJS.MD5(Math.random().toString()).toString();
-    sessionStorage.setItem('caiyun_id',browser_id);
-    const options= {
-        method:"POST",
-        url:'https://api.interpreter.caiyunai.com/v1/user/jwt/generate',
-        headers:{
-            "Content-Type": "application/json",
-            "X-Authorization": "token:qgemv4jr1y38jyq6vhvi",
-            "Origin": "https://fanyi.caiyunapp.com",
-        },
-        data:JSON.stringify({browser_id}),
-    }
-    const res = await Request(options);
-    sessionStorage.setItem('caiyun_jwt',JSON.parse(res.responseText).jwt);
-}
- 
-async function translate_caiyun(raw){
-    const source="NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm";
-    const dic=[..."ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"].reduce((dic,current,index)=>{dic[current]=source[index];return dic},{});
-    const decoder = line => Base64.decode([...line].map(i=>dic[i]||i).join(""))
-    const options = {
-        method:"POST",
-        url:'https://api.interpreter.caiyunai.com/v1/translator',
-        data:JSON.stringify({
-            "source":raw.split('\n'),
-            "trans_type": "auto2zh",
-            "detect": true,
-            "browser_id": sessionStorage.getItem('caiyun_id')
-        }),
-        headers: {
-            "X-Authorization": "token:qgemv4jr1y38jyq6vhvi",
-            "T-Authorization": sessionStorage.getItem('caiyun_jwt')
-        }
-    }
-    return await BaseTranslate('彩云小译',raw,options,res=>JSON.parse(res).target.map(decoder).join('\n'))
-}
- 
-//--彩云翻译--end
- 
-//--papago翻译--start
- 
-async function translate_papago_startup(){
-    if(sessionStorage.getItem('papago_key'))return;
-    const base_options = {
-        method: 'GET',
-        url: 'https://papago.naver.com/',
-        anonymous:true,
-    }
-    const base_res = await Request(base_options)
-    const uri = /"\/(home\..*?.chunk.js)"/.exec(base_res.responseText)[1]
-    const options = {
-        method:'GET',
-        url:'https://papago.naver.com/'+uri
-    }
-    const res = await Request(options);
-    const key = /AUTH_KEY:"(.*?)"/.exec(res.responseText)[1];
-    sessionStorage.setItem('papago_key',key);
-}
- 
-async function translate_papago(raw){
-    const time= Date.now();
-    const options = {
-        method:'POST',
-        url:'https://papago.naver.com/apis/n2mt/translate',
-        data:`deviceId=${time}&source=auto&target=zh-CN&text=${encodeURIComponent(raw)}`,
-        headers:{
-            "authorization":'PPG '+time+':'+CryptoJS.HmacMD5(time+'\nhttps://papago.naver.com/apis/n2mt/translate\n'+time, sessionStorage.getItem('papago_key')).toString(CryptoJS.enc.Base64),
-            "x-apigw-partnerid":"papago",
-            "device-type":'pc',
-            "timestamp":time,
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-    }
-    return await BaseTranslate('Papago',raw,options,res=>JSON.parse(res).translatedText)
-}
- 
-//--papago翻译--end
- 
-//--阿里翻译--start
-async function translate_alibaba(raw){
-    const options = {
-        method: 'POST',
-        url:'https://translate.alibaba.com/translationopenseviceapp/trans/TranslateTextAddAlignment.do',
-        data:`srcLanguage=auto&tgtLanguage=zh&bizType=message&srcText=${encodeURIComponent(raw)}`,
-        headers:{
-            "Content-Type":"application/x-www-form-urlencoded",
-            "origin": "https://translate.alibaba.com",
-            "referer": "https://translate.alibaba.com/",
-            "sec-fetch-site": "same-origin",
-        }
-    }
-    return await BaseTranslate('阿里翻译',raw,options,res=>JSON.parse(res).listTargetText[0])
-}
-//--阿里翻译--end
- 
-//--Deepl翻译--start
- 
-function getTimeStamp(iCount) {
-    const ts = Date.now();
-    if (iCount !== 0) {
-        iCount = iCount + 1;
-        return ts - (ts % iCount) + iCount;
-    } else {
-        return ts;
-    }
-}
- 
-async function translate_deepl(raw) {
-    const id = (Math.floor(Math.random() * 99999) + 100000)* 1000;
-    const data = {
-        jsonrpc: '2.0',
-        method: 'LMT_handle_texts',
-        id,
-        params: {
-            splitting: 'newlines',
-            lang: {
-                source_lang_user_selected: 'auto',
-                target_lang: 'ZH',
-            },
-            texts: [{
-                text: raw,
-                requestAlternatives:3
-            }],
-            timestamp: getTimeStamp(raw.split('i').length - 1)
-        }
-    }
-    let postData = JSON.stringify(data);
-    if ((id + 5) % 29 === 0 || (id + 3) % 13 === 0) {
-        postData = postData.replace('"method":"', '"method" : "');
-    } else {
-        postData = postData.replace('"method":"', '"method": "');
-    }
-    const options = {
-        method: 'POST',
-        url: 'https://www2.deepl.com/jsonrpc',
-        data: postData,
-        headers: {
-            'Content-Type': 'application/json',
-            'Host': 'www.deepl.com',
-            'Origin': 'https://www.deepl.com',
-            'Referer': 'https://www.deepl.com/'
-        },
-        anonymous:true,
-        nocache:true,
-    }
-    return await BaseTranslate('Deepl翻译',raw,options,res=>JSON.parse(res).result.texts[0].text)
-}
- 
-//--Deepl翻译--end
- 
+
+
 //--异步请求包装工具--start
- 
+
 async function PromiseRetryWrap(task,options,...values){
     const {RetryTimes,ErrProcesser} = options||{};
     let retryTimes = RetryTimes||5;
@@ -818,7 +389,7 @@ async function PromiseRetryWrap(task,options,...values){
         }
     }
 }
- 
+
 async function BaseTranslate(name,raw,options,processer){
     const toDo = async ()=>{
         var tmp;
@@ -837,9 +408,9 @@ async function BaseTranslate(name,raw,options,processer){
     }
     return await PromiseRetryWrap(toDo,{RetryTimes:3,ErrProcesser:()=>"翻译出错"})
 }
- 
+
 function Request(options){
     return new Promise((reslove,reject)=>GM_xmlhttpRequest({...options,onload:reslove,onerror:reject}))
 }
- 
+
 //--异步请求包装工具--end
