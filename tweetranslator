@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         tweet_ranslator_test
+// @name         tweetranslator
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  translate tweets by google....
@@ -23,13 +23,12 @@
 
 debugger;
 
-const sessionStorage = window.sessionStorage;
-const startup={};
-const isMandarin = true
-const remove_url = true
-const globalProcessingSave=[];
+let sessionStorage = window.sessionStorage;
+let startup={};
+let remove_url = true
+let globalProcessingSave=[];
 
-const rules={
+let rules={
     'twitter':[{
         name:'twitter.com',
         matcher:/https:\/\/[a-zA-Z.]*?twitter\.com/,
@@ -42,12 +41,12 @@ const rules={
             name:'youtube pc通用',
             matcher:/https:\/\/www.youtube.com\/watch/,
             selector:()=>{
-                const result=[...document.querySelectorAll('#content>#content-text,#content>#description>.content,#comment-content')].filter(item=>item.__data&&item.__data.text).filter(item=>item.childNodes.length==item.__data.text.runs.length);
+                let result=[...document.querySelectorAll('#content>#content-text,#content>#description>.content,#comment-content')].filter(item=>item.__data&&item.__data.text).filter(item=>item.childNodes.length==item.__data.text.runs.length);
                 return result;
             },
             textGetter:element=>remove_url?url_filter(element.innerText):element.innerText,
             textSetter:(element,name,text)=>{
-                element.updateText_([...element.__data.text.runs,{text:`\n\n-----------"+name+"-----------":""}\n`+text}]);
+                element.updateText_([...element.__data.text.runs,{text:`\n`+text}]);
                 element.parentNode.parentNode.removeAttribute('collapsed');
             }
         },
@@ -64,10 +63,10 @@ const rules={
         matcher:/https:\/\/www.facebook.com\/.+/,
         selector: baseSelector('div[data-ad-comet-preview=message],li>div>div[role=article] div>span[dir=auto]'),
         textGetter:element=>{
-            const key = Object.keys(document.querySelector('div>div')||{}).find(item=>item.match('^__reactProps'));
+            let key = Object.keys(document.querySelector('div>div')||{}).find(item=>item.match('^__reactProps'));
             let content = element.tagName==="DIV"?element.innerText:element[key].children.props.textWithEntities.text;
             if(element.tagName==="SPAN"){
-                const more = element.querySelector('div>div[role=button]');
+                let more = element.querySelector('div>div[role=button]');
                 if(more)more.click();
             }
             return content;
@@ -116,25 +115,29 @@ const rules={
 
 (function() {
     'use strict';
-    const GetActiveRule = ()=>Object.entries(rules).filter(([key])=>GM_getValue("enable_rule:"+key,true)).map(([_,group])=>group).flat().find(item=>item.matcher.test(document.location.href));
+    let GetActiveRule = () =>
+  Object.values(rules)
+    .flatMap(group => group.filter(item => GM_getValue(`enable_rule:${item.matcher.source}`, true)))
+    .find(item => item.matcher.test(document.location.href))
+
+
     let url=document.location.href;
     let rule=GetActiveRule();
     setInterval(()=>{
         if(document.location.href!=url){
             url=document.location.href;
-            const ruleNew=GetActiveRule();
         }
     },200)
 
     let main=_=>{
         if(!rule)return;
-        const choice='translate.google';
-        const temp=[...new Set(rule.selector())];
+        let choice='translate.google';
+        let temp=[...new Set(rule.selector())];
         for(let i=0;i<temp.length;i++){
-            const now=temp[i];
+            let now=temp[i];
             if(globalProcessingSave.includes(now))continue;
             globalProcessingSave.push(now);
-            const text=remove_url?url_filter(rule.textGetter(now)):rule.textGetter(now);
+            let text=remove_url?url_filter(rule.textGetter(now)):rule.textGetter(now);
             if(text.length==0)continue;
             if(sessionStorage.getItem(choice+'-'+text)){
                 rule.textSetter(now,choice,sessionStorage.getItem(choice+'-'+text));
@@ -152,15 +155,15 @@ const rules={
 
 //--综合工具区--start
 function removeItem(arr,item){
-    const index=arr.indexOf(item);
+    let index=arr.indexOf(item);
     if(index>-1)arr.splice(index,1);
 }
 
 function baseSelector(selector){
     return ()=>{
-        const items = document.querySelectorAll(selector);
+        let items = document.querySelectorAll(selector);
         return Array.from(items).filter(item=>{
-            const node = item.querySelector('[data-translate]');
+            let node = item.querySelector('[data-translate]');
             return !(node && node.parentNode === item);
         })
     }
@@ -172,9 +175,11 @@ function baseTextGetter(e){
 
 function baseTextSetter(e,name,text){//change element text
     if((text||"").length==0)text='= Ｅ R　R　O　R　＝';
-    const spanNode = document.createElement('span');
+    let spanNode = document.createElement('span');
     spanNode.style.fontFamily = "Microsoft YaHei";
-    spanNode.innerText = "\n\n🀄️" + text;
+    spanNode.style.fontSize = "16px";
+    spanNode.style.color = "#333333";
+    spanNode.innerText = '\n\n❝' + text + '❞\n';
     spanNode.dataset.translate="processed";
     e.appendChild(spanNode);
 }
@@ -184,9 +189,9 @@ function url_filter(text){
 }
 
 async function ignoreMandarin(raw){//确认是否为中文，是则中断promise
-    if(!isMandarin)return;
+    if(false)return;
     try{
-        const result = await detectLanguage(raw)
+        let result = await detectLanguage(raw)
         if(result=='zh')return new Promise(()=>{});
         return result
     }catch(err){
@@ -197,7 +202,7 @@ async function ignoreMandarin(raw){//确认是否为中文，是则中断promise
 }
 
 async function detectLanguage(raw){
-    const options = {
+    let options = {
         method:"POST",
         url:'https://fanyi.baidu.com/langdetect',
         data:'query='+encodeURIComponent(raw.replace(/[\uD800-\uDBFF]$/, "").slice(0,50)),
@@ -205,7 +210,7 @@ async function detectLanguage(raw){
             "Content-Type": "application/x-www-form-urlencoded",
         }
     }
-    const res = await Request(options);
+    let res = await Request(options);
     try{
         return JSON.parse(res.responseText).lan
     }catch(err){
@@ -225,7 +230,7 @@ function guid() {
 
 //--translate.google--start
 async function translator(raw){
-    const options = {
+    let options = {
         method:"POST",
         url:"https://translate.google.com/_/TranslateWebserverUi/data/batchexecute",
         data: "f.req="+encodeURIComponent(JSON.stringify([[["MkEWBc",JSON.stringify([[raw,"auto","zh",true],[null]]),null,"generic"]]])),
@@ -243,9 +248,9 @@ async function translator(raw){
 
 //--异步请求包装工具--start
 async function PromiseRetryWrap(task,options,...values){
-    const {RetryTimes,ErrProcesser} = options||{};
+    let {RetryTimes,ErrProcesser} = options||{};
     let retryTimes = RetryTimes||5;
-    const usedErrProcesser = ErrProcesser || (err =>{throw err});
+    let usedErrProcesser = ErrProcesser || (err =>{throw err});
     if(!task)return;
     while(true){
         try{
@@ -260,12 +265,12 @@ async function PromiseRetryWrap(task,options,...values){
 }
 
 async function BaseTranslate(name,raw,options,processer){
-    const toDo = async ()=>{
+    let toDo = async ()=>{
         var tmp;
         try{
-            const data = await Request(options);
+            let data = await Request(options);
             tmp = data.responseText;
-            const result = await processer(tmp);
+            let result = await processer(tmp);
             if(result)sessionStorage.setItem(name+'-'+raw,result);
             return result
         }catch(err){
